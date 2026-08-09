@@ -1,0 +1,90 @@
+{
+  "model": "SVM_ORIGINAL",
+  "overall": {
+    "model": "SVM_ORIGINAL",
+    "macro_f1": 0.9708715057552266,
+    "precision_macro": 0.9722191199463928,
+    "recall_macro": 0.9695349208442356,
+    "mcc": 0.9417502155139951,
+    "f1_ham": 0.9922480620155039,
+    "f1_smishing": 0.9494949494949495,
+    "confusion_matrix": [
+      [
+        960,
+        7
+      ],
+      [
+        8,
+        141
+      ]
+    ]
+  },
+  "classification_report": {
+    "0": {
+      "precision": 0.9917355371900827,
+      "recall": 0.9927611168562565,
+      "f1-score": 0.9922480620155039,
+      "support": 967.0
+    },
+    "1": {
+      "precision": 0.9527027027027027,
+      "recall": 0.9463087248322147,
+      "f1-score": 0.9494949494949495,
+      "support": 149.0
+    },
+    "accuracy": 0.9865591397849462,
+    "macro avg": {
+      "precision": 0.9722191199463928,
+      "recall": 0.9695349208442356,
+      "f1-score": 0.9708715057552266,
+      "support": 1116.0
+    },
+    "weighted avg": {
+      "precision": 0.9865241641268033,
+      "recall": 0.9865591397849462,
+      "f1-score": 0.9865399851646414,
+      "support": 1116.0
+    }
+  },
+  "dialect_results": {
+    "overall": {
+      "model": "SVM_ORIGINAL_overall",
+      "macro_f1": 0.9708715057552266,
+      "precision_macro": 0.9722191199463928,
+      "recall_macro": 0.9695349208442356,
+      "mcc": 0.9417502155139951,
+      "f1_ham": 0.9922480620155039,
+      "f1_smishing": 0.9494949494949495,
+      "confusion_matrix": [
+        [
+          960,
+          7
+        ],
+        [
+          8,
+          141
+        ]
+      ]
+    },
+    "english": {
+      "model": "SVM_ORIGINAL_english",
+      "macro_f1": 0.9708715057552266,
+      "precision_macro": 0.9722191199463928,
+      "recall_macro": 0.9695349208442356,
+      "mcc": 0.9417502155139951,
+      "f1_ham": 0.9922480620155039,
+      "f1_smishing": 0.9494949494949495,
+      "confusion_matrix": [
+        [
+          960,
+          7
+        ],
+        [
+          8,
+          141
+        ]
+      ],
+      "n_samples": 1116
+    }
+  }
+}

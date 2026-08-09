@@ -1,0 +1,11 @@
+[
+  {
+    "test": "Paired t-test",
+    "model_a": "XLM-R (Original)",
+    "model_b": "XLM-R (Augmented)",
+    "mean_a": 0.982522903453136,
+    "mean_b": 0.982522903453136,
+    "p_value": NaN,
+    "significant": false
+  }
+]

@@ -1,0 +1,90 @@
+{
+  "model": "LR_ORIGINAL",
+  "overall": {
+    "model": "LR_ORIGINAL",
+    "macro_f1": 0.9677201459841596,
+    "precision_macro": 0.9589342948717949,
+    "recall_macro": 0.9770167195297155,
+    "mcc": 0.9357763233154102,
+    "f1_ham": 0.9911779968863519,
+    "f1_smishing": 0.9442622950819672,
+    "confusion_matrix": [
+      [
+        955,
+        12
+      ],
+      [
+        5,
+        144
+      ]
+    ]
+  },
+  "classification_report": {
+    "0": {
+      "precision": 0.9947916666666666,
+      "recall": 0.9875904860392968,
+      "f1-score": 0.9911779968863519,
+      "support": 967.0
+    },
+    "1": {
+      "precision": 0.9230769230769231,
+      "recall": 0.9664429530201343,
+      "f1-score": 0.9442622950819672,
+      "support": 149.0
+    },
+    "accuracy": 0.9847670250896058,
+    "macro avg": {
+      "precision": 0.9589342948717949,
+      "recall": 0.9770167195297155,
+      "f1-score": 0.9677201459841596,
+      "support": 1116.0
+    },
+    "weighted avg": {
+      "precision": 0.9852168487501148,
+      "recall": 0.9847670250896058,
+      "f1-score": 0.984914162147236,
+      "support": 1116.0
+    }
+  },
+  "dialect_results": {
+    "overall": {
+      "model": "LR_ORIGINAL_overall",
+      "macro_f1": 0.9677201459841596,
+      "precision_macro": 0.9589342948717949,
+      "recall_macro": 0.9770167195297155,
+      "mcc": 0.9357763233154102,
+      "f1_ham": 0.9911779968863519,
+      "f1_smishing": 0.9442622950819672,
+      "confusion_matrix": [
+        [
+          955,
+          12
+        ],
+        [
+          5,
+          144
+        ]
+      ]
+    },
+    "english": {
+      "model": "LR_ORIGINAL_english",
+      "macro_f1": 0.9677201459841596,
+      "precision_macro": 0.9589342948717949,
+      "recall_macro": 0.9770167195297155,
+      "mcc": 0.9357763233154102,
+      "f1_ham": 0.9911779968863519,
+      "f1_smishing": 0.9442622950819672,
+      "confusion_matrix": [
+        [
+          955,
+          12
+        ],
+        [
+          5,
+          144
+        ]
+      ],
+      "n_samples": 1116
+    }
+  }
+}

@@ -1,0 +1,78 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Cextensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py.class
+.pytest_cache/
+
+# Environments / Virtual Envs
+.venv
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+# Project output / Checkpoints (Large model weights)
+outputs/checkpoints/
+tmp_trainer/
+*.pt
+*.bin
+*.pth
+*.safetensors
+*.onnx
+
+# Data caches
+data/processed/*.json
+data/processed/*.parquet
+
+# OS specific files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Sub-repositories or draft documents
+XLM-JUD/
+*.docx

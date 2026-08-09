@@ -1,0 +1,93 @@
+{
+  "model": "XLM-RoBERTa_original",
+  "overall": {
+    "model": "XLM-RoBERTa_original",
+    "macro_f1": 0.982522903453136,
+    "precision_macro": 0.9839038418583874,
+    "recall_macro": 0.9811532241832832,
+    "mcc": 0.9650531461113231,
+    "f1_ham": 0.9953488372093023,
+    "f1_smishing": 0.9696969696969697,
+    "auc_roc": 0.9969809068384194,
+    "confusion_matrix": [
+      [
+        963,
+        4
+      ],
+      [
+        5,
+        144
+      ]
+    ]
+  },
+  "classification_report": {
+    "0": {
+      "precision": 0.9948347107438017,
+      "recall": 0.9958634953464323,
+      "f1-score": 0.9953488372093023,
+      "support": 967.0
+    },
+    "1": {
+      "precision": 0.972972972972973,
+      "recall": 0.9664429530201343,
+      "f1-score": 0.9696969696969697,
+      "support": 149.0
+    },
+    "accuracy": 0.9919354838709677,
+    "macro avg": {
+      "precision": 0.9839038418583874,
+      "recall": 0.9811532241832832,
+      "f1-score": 0.982522903453136,
+      "support": 1116.0
+    },
+    "weighted avg": {
+      "precision": 0.9919158945002055,
+      "recall": 0.9919354838709677,
+      "f1-score": 0.9919239910987848,
+      "support": 1116.0
+    }
+  },
+  "dialect_results": {
+    "overall": {
+      "model": "XLM-RoBERTa_original_overall",
+      "macro_f1": 0.982522903453136,
+      "precision_macro": 0.9839038418583874,
+      "recall_macro": 0.9811532241832832,
+      "mcc": 0.9650531461113231,
+      "f1_ham": 0.9953488372093023,
+      "f1_smishing": 0.9696969696969697,
+      "auc_roc": 0.9969809068384194,
+      "confusion_matrix": [
+        [
+          963,
+          4
+        ],
+        [
+          5,
+          144
+        ]
+      ]
+    },
+    "english": {
+      "model": "XLM-RoBERTa_original_english",
+      "macro_f1": 0.982522903453136,
+      "precision_macro": 0.9839038418583874,
+      "recall_macro": 0.9811532241832832,
+      "mcc": 0.9650531461113231,
+      "f1_ham": 0.9953488372093023,
+      "f1_smishing": 0.9696969696969697,
+      "auc_roc": 0.9969809068384194,
+      "confusion_matrix": [
+        [
+          963,
+          4
+        ],
+        [
+          5,
+          144
+        ]
+      ],
+      "n_samples": 1116
+    }
+  }
+}
