@@ -47,8 +47,28 @@ LABEL_MAP = {"ham": 0, "smishing": 1}
 LABEL_MAP_INV = {v: k for k, v in LABEL_MAP.items()}
 
 # FLORES-200 languages (Section 3.1.1)
-FLORES_LANGUAGES = ["ceb_Latn", "ilo_Latn"]
+FLORES_LANGUAGES = ["ceb_Latn", "ilo_Latn", "tgl_Latn"]
 FLORES_SPLIT = "devtest"  # 997 sentences per language
+
+# Additional SMS/Phishing datasets from HuggingFace (Section 3.1.1)
+EXTRA_DATASETS = {
+    "phishing_sms": {
+        "hf_id": "ealvaradob/phishing-dataset",
+        "subset": "combined",
+        "text_col": "text",
+        "label_col": "label",
+        "label_map": {"Smishing": "smishing", "Legitimate": "ham"},
+        "filter_col": "type",
+        "filter_value": "SMS",
+    },
+    "spam_messages": {
+        "hf_id": "mshenoda/spam-messages",
+        "subset": None,
+        "text_col": "text",
+        "label_col": "label",
+        "label_map": {"spam": "smishing", "ham": "ham"},
+    },
+}
 
 # =============================================================================
 # Preprocessing Configuration (Section 3.1.2)

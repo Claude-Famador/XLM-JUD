@@ -31,10 +31,11 @@ def phase_data():
 
     # Optionally download UCI and FLORES-200
     try:
-        from data.download_datasets import download_uci_dataset, download_flores, merge_datasets
-        print("\nAttempting to download UCI and FLORES datasets...")
+        from data.download_datasets import download_uci_dataset, download_flores, download_extra_datasets, merge_datasets
+        print("\nAttempting to download UCI, FLORES, and extra datasets...")
         download_uci_dataset()
         download_flores()
+        download_extra_datasets()
         merge_datasets()
     except Exception as e:
         print(f"Dataset download skipped or failed: {e}")
