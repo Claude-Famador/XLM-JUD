@@ -28,7 +28,7 @@ def download_uci_dataset(output_dir: str = None) -> pd.DataFrame:
 
     print("Downloading UCI SMS Spam Collection Dataset...")
     try:
-        dataset = load_dataset("sms_spam", trust_remote_code=True)
+        dataset = load_dataset("sms_spam")
         df = pd.DataFrame(dataset["train"])
 
         # Rename columns to match our expected format
@@ -72,7 +72,7 @@ def download_flores(
     print(f"\nDownloading FLORES-200 data for languages: {languages}")
     for lang in languages:
         try:
-            dataset = load_dataset("facebook/flores", lang, split=split, trust_remote_code=True)
+            dataset = load_dataset("facebook/flores", lang, split=split)
             df = pd.DataFrame({
                 "text": dataset["sentence"],
                 "language": lang,
@@ -112,10 +112,10 @@ def download_extra_datasets(output_dir: str = None) -> dict[str, pd.DataFrame]:
             # Load from HuggingFace
             if cfg.get("subset"):
                 dataset = load_dataset(
-                    cfg["hf_id"], cfg["subset"], trust_remote_code=True
+                    cfg["hf_id"], cfg["subset"]
                 )
             else:
-                dataset = load_dataset(cfg["hf_id"], trust_remote_code=True)
+                dataset = load_dataset(cfg["hf_id"])
 
             # Combine all splits into one DataFrame
             all_splits = []

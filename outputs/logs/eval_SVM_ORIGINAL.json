@@ -2,89 +2,109 @@
   "model": "SVM_ORIGINAL",
   "overall": {
     "model": "SVM_ORIGINAL",
-    "macro_f1": 0.9708715057552266,
-    "precision_macro": 0.9722191199463928,
-    "recall_macro": 0.9695349208442356,
-    "mcc": 0.9417502155139951,
-    "f1_ham": 0.9922480620155039,
-    "f1_smishing": 0.9494949494949495,
+    "macro_f1": 0.951817404364719,
+    "precision_macro": 0.9537476664058575,
+    "recall_macro": 0.9500211782423167,
+    "mcc": 0.9037611619463755,
+    "f1_ham": 0.9639901263249601,
+    "f1_smishing": 0.939644682404478,
     "confusion_matrix": [
       [
-        960,
-        7
+        6639,
+        206
       ],
       [
-        8,
-        141
+        290,
+        3861
       ]
     ]
   },
   "classification_report": {
     "0": {
-      "precision": 0.9917355371900827,
-      "recall": 0.9927611168562565,
-      "f1-score": 0.9922480620155039,
-      "support": 967.0
+      "precision": 0.958146918747294,
+      "recall": 0.9699050401753104,
+      "f1-score": 0.9639901263249601,
+      "support": 6845.0
     },
     "1": {
-      "precision": 0.9527027027027027,
-      "recall": 0.9463087248322147,
-      "f1-score": 0.9494949494949495,
-      "support": 149.0
+      "precision": 0.9493484140644209,
+      "recall": 0.9301373163093231,
+      "f1-score": 0.939644682404478,
+      "support": 4151.0
     },
-    "accuracy": 0.9865591397849462,
+    "accuracy": 0.9548926882502728,
     "macro avg": {
-      "precision": 0.9722191199463928,
-      "recall": 0.9695349208442356,
-      "f1-score": 0.9708715057552266,
-      "support": 1116.0
+      "precision": 0.9537476664058575,
+      "recall": 0.9500211782423167,
+      "f1-score": 0.951817404364719,
+      "support": 10996.0
     },
     "weighted avg": {
-      "precision": 0.9865241641268033,
-      "recall": 0.9865591397849462,
-      "f1-score": 0.9865399851646414,
-      "support": 1116.0
+      "precision": 0.9548254752279591,
+      "recall": 0.9548926882502728,
+      "f1-score": 0.9547996991047053,
+      "support": 10996.0
     }
   },
   "dialect_results": {
     "overall": {
       "model": "SVM_ORIGINAL_overall",
-      "macro_f1": 0.9708715057552266,
-      "precision_macro": 0.9722191199463928,
-      "recall_macro": 0.9695349208442356,
-      "mcc": 0.9417502155139951,
-      "f1_ham": 0.9922480620155039,
-      "f1_smishing": 0.9494949494949495,
+      "macro_f1": 0.951817404364719,
+      "precision_macro": 0.9537476664058575,
+      "recall_macro": 0.9500211782423167,
+      "mcc": 0.9037611619463755,
+      "f1_ham": 0.9639901263249601,
+      "f1_smishing": 0.939644682404478,
       "confusion_matrix": [
         [
-          960,
-          7
+          6639,
+          206
         ],
         [
-          8,
-          141
+          290,
+          3861
         ]
       ]
     },
-    "english": {
-      "model": "SVM_ORIGINAL_english",
-      "macro_f1": 0.9708715057552266,
-      "precision_macro": 0.9722191199463928,
-      "recall_macro": 0.9695349208442356,
-      "mcc": 0.9417502155139951,
-      "f1_ham": 0.9922480620155039,
-      "f1_smishing": 0.9494949494949495,
+    "extra_spam_messages": {
+      "model": "SVM_ORIGINAL_extra_spam_messages",
+      "macro_f1": 0.9512852245475283,
+      "precision_macro": 0.9534910914151717,
+      "recall_macro": 0.9493275421426737,
+      "mcc": 0.9028090329392536,
+      "f1_ham": 0.9613048181742532,
+      "f1_smishing": 0.9412656309208033,
       "confusion_matrix": [
         [
-          960,
-          7
+          5776,
+          179
         ],
         [
-          8,
-          141
+          286,
+          3726
         ]
       ],
-      "n_samples": 1116
+      "n_samples": 9967
+    },
+    "english": {
+      "model": "SVM_ORIGINAL_english",
+      "macro_f1": 0.9396831279533031,
+      "precision_macro": 0.9143598615916955,
+      "recall_macro": 0.9704429714655242,
+      "mcc": 0.8830236339832374,
+      "f1_ham": 0.9823562891291975,
+      "f1_smishing": 0.8970099667774086,
+      "confusion_matrix": [
+        [
+          863,
+          27
+        ],
+        [
+          4,
+          135
+        ]
+      ],
+      "n_samples": 1029
     }
   }
 }

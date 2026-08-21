@@ -109,7 +109,7 @@ XLM_MODEL_NAME = "xlm-roberta-base"
 XLM_MAX_LENGTH = 128  # Max token length for SMS messages
 
 # Training hyperparameters (Section 3.2.3)
-XLM_EPOCHS = 10
+XLM_EPOCHS = 5
 XLM_BATCH_SIZE = 16
 XLM_LEARNING_RATE = 2e-5
 XLM_WEIGHT_DECAY = 0.01

@@ -104,11 +104,11 @@ def train_baselines(
     lr_orig = trainer.train_logistic_regression(X_train_tfidf, y_train, **lr_params, dataset_name="original")
     all_results["LR_original"] = trainer.evaluate(lr_orig, X_test_tfidf, y_test, "LR_original")
 
-    from sklearn.svm import SVC
+    from sklearn.svm import LinearSVC
     from sklearn.linear_model import LogisticRegression as LR
     
-    cv_params_svm = {**svm_params, "class_weight": "balanced"}
-    all_results["SVM_original_cv"] = trainer.cross_validate(SVC, X_train_tfidf, y_train, cv_params_svm, "SVM_original_cv")
+    cv_params_svm = {"C": svm_params.get("C", 1.0), "class_weight": "balanced", "max_iter": 2000}
+    all_results["SVM_original_cv"] = trainer.cross_validate(LinearSVC, X_train_tfidf, y_train, cv_params_svm, "SVM_original_cv")
     
     cv_params_lr = {**lr_params, "class_weight": "balanced", "max_iter": 1000}
     all_results["LR_original_cv"] = trainer.cross_validate(LR, X_train_tfidf, y_train, cv_params_lr, "LR_original_cv")
@@ -120,7 +120,7 @@ def train_baselines(
         lr_aug = trainer.train_logistic_regression(X_smote, y_smote, **lr_params, dataset_name="smote")
         all_results["LR_smote"] = trainer.evaluate(lr_aug, X_test_tfidf, y_test, "LR_smote")
         
-        all_results["SVM_smote_cv"] = trainer.cross_validate(SVC, X_smote, y_smote, cv_params_svm, "SVM_smote_cv")
+        all_results["SVM_smote_cv"] = trainer.cross_validate(LinearSVC, X_smote, y_smote, cv_params_svm, "SVM_smote_cv")
         all_results["LR_smote_cv"] = trainer.cross_validate(LR, X_smote, y_smote, cv_params_lr, "LR_smote_cv")
 
     for key in trainer.models:

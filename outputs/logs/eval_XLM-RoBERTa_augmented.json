@@ -2,92 +2,113 @@
   "model": "XLM-RoBERTa_augmented",
   "overall": {
     "model": "XLM-RoBERTa_augmented",
-    "macro_f1": 0.982522903453136,
-    "precision_macro": 0.9839038418583874,
-    "recall_macro": 0.9811532241832832,
-    "mcc": 0.9650531461113231,
-    "f1_ham": 0.9953488372093023,
-    "f1_smishing": 0.9696969696969697,
-    "auc_roc": 0.9869936078510304,
+    "macro_f1": 0.9873204016762981,
+    "precision_macro": 0.987529900383483,
+    "recall_macro": 0.9871124896374429,
+    "mcc": 0.9746423006385325,
+    "f1_ham": 0.9904372581940287,
+    "f1_smishing": 0.9842035451585674,
+    "auc_roc": 0.998280119076801,
     "confusion_matrix": [
       [
-        963,
-        4
+        6784,
+        61
       ],
       [
-        5,
-        144
+        70,
+        4081
       ]
     ]
   },
   "classification_report": {
     "0": {
-      "precision": 0.9948347107438017,
-      "recall": 0.9958634953464323,
-      "f1-score": 0.9953488372093023,
-      "support": 967.0
+      "precision": 0.98978698570178,
+      "recall": 0.9910883856829803,
+      "f1-score": 0.9904372581940287,
+      "support": 6845.0
     },
     "1": {
-      "precision": 0.972972972972973,
-      "recall": 0.9664429530201343,
-      "f1-score": 0.9696969696969697,
-      "support": 149.0
+      "precision": 0.9852728150651859,
+      "recall": 0.9831365935919055,
+      "f1-score": 0.9842035451585674,
+      "support": 4151.0
     },
-    "accuracy": 0.9919354838709677,
+    "accuracy": 0.988086576937068,
     "macro avg": {
-      "precision": 0.9839038418583874,
-      "recall": 0.9811532241832832,
-      "f1-score": 0.982522903453136,
-      "support": 1116.0
+      "precision": 0.987529900383483,
+      "recall": 0.9871124896374429,
+      "f1-score": 0.9873204016762981,
+      "support": 10996.0
     },
     "weighted avg": {
-      "precision": 0.9919158945002055,
-      "recall": 0.9919354838709677,
-      "f1-score": 0.9919239910987848,
-      "support": 1116.0
+      "precision": 0.9880828821811815,
+      "recall": 0.988086576937068,
+      "f1-score": 0.9880840258540688,
+      "support": 10996.0
     }
   },
   "dialect_results": {
     "overall": {
       "model": "XLM-RoBERTa_augmented_overall",
-      "macro_f1": 0.982522903453136,
-      "precision_macro": 0.9839038418583874,
-      "recall_macro": 0.9811532241832832,
-      "mcc": 0.9650531461113231,
-      "f1_ham": 0.9953488372093023,
-      "f1_smishing": 0.9696969696969697,
-      "auc_roc": 0.9869936078510304,
+      "macro_f1": 0.9873204016762981,
+      "precision_macro": 0.987529900383483,
+      "recall_macro": 0.9871124896374429,
+      "mcc": 0.9746423006385325,
+      "f1_ham": 0.9904372581940287,
+      "f1_smishing": 0.9842035451585674,
+      "auc_roc": 0.998280119076801,
       "confusion_matrix": [
         [
-          963,
-          4
+          6784,
+          61
         ],
         [
-          5,
-          144
+          70,
+          4081
         ]
       ]
     },
-    "english": {
-      "model": "XLM-RoBERTa_augmented_english",
-      "macro_f1": 0.982522903453136,
-      "precision_macro": 0.9839038418583874,
-      "recall_macro": 0.9811532241832832,
-      "mcc": 0.9650531461113231,
-      "f1_ham": 0.9953488372093023,
-      "f1_smishing": 0.9696969696969697,
-      "auc_roc": 0.9869936078510304,
+    "extra_spam_messages": {
+      "model": "XLM-RoBERTa_augmented_extra_spam_messages",
+      "macro_f1": 0.986643755219377,
+      "precision_macro": 0.9868844058991117,
+      "recall_macro": 0.9864063142227391,
+      "mcc": 0.9732906026997589,
+      "f1_ham": 0.9892635463848347,
+      "f1_smishing": 0.9840239640539191,
+      "auc_roc": 0.9981925340686588,
       "confusion_matrix": [
         [
-          963,
-          4
+          5897,
+          58
         ],
         [
-          5,
-          144
+          70,
+          3942
         ]
       ],
-      "n_samples": 1116
+      "n_samples": 9967
+    },
+    "english": {
+      "model": "XLM-RoBERTa_augmented_english",
+      "macro_f1": 0.9938178024059904,
+      "precision_macro": 0.9894366197183099,
+      "recall_macro": 0.998314606741573,
+      "mcc": 0.987711327625343,
+      "f1_ham": 0.9983117613956106,
+      "f1_smishing": 0.9893238434163701,
+      "auc_roc": 0.999943416053674,
+      "confusion_matrix": [
+        [
+          887,
+          3
+        ],
+        [
+          0,
+          139
+        ]
+      ],
+      "n_samples": 1029
     }
   }
 }

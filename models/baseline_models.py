@@ -38,15 +38,19 @@ class BaselineTrainer:
         joblib.dump(self.tfidf, os.path.join(config.MODEL_DIR, "tfidf_vectorizer.joblib"))
         
     def train_svm(self, X_train, y_train, C=1.0, kernel="linear", dataset_name="original"):
-        """Train SVM model."""
+        """Train SVM model using LinearSVC (much faster for large datasets)."""
         print(f"  Training SVM ({kernel}, C={C}) on {dataset_name} data...")
-        model = SVC(
-            C=C, 
-            kernel=kernel, 
+        from sklearn.svm import LinearSVC
+        from sklearn.calibration import CalibratedClassifierCV
+        
+        base_svm = LinearSVC(
+            C=C,
             random_state=config.SEED,
-            probability=True,
-            class_weight="balanced"
+            class_weight="balanced",
+            max_iter=2000,
         )
+        # Wrap with CalibratedClassifierCV for probability estimates
+        model = CalibratedClassifierCV(base_svm, cv=3)
         model.fit(X_train, y_train)
         
         key = f"svm_{dataset_name}"
