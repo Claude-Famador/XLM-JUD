@@ -13,6 +13,7 @@ import pandas as pd
 from transformers import (
     AutoTokenizer,
     AutoModelForSequenceClassification,
+    AutoConfig,
     TrainingArguments,
     Trainer,
     EarlyStoppingCallback
@@ -44,6 +45,10 @@ class XLMRoBERTaTrainer:
         weight_decay: float = config.XLM_WEIGHT_DECAY,
         epochs: int = config.XLM_EPOCHS,
         patience: int = config.XLM_EARLY_STOPPING_PATIENCE,
+        label_smoothing: float = config.XLM_LABEL_SMOOTHING,
+        dropout: float = config.XLM_DROPOUT,
+        max_grad_norm: float = config.XLM_MAX_GRAD_NORM,
+        warmup_ratio: float = config.XLM_WARMUP_RATIO,
         seed: int = config.SEED,
     ):
         self.learning_rate = learning_rate
@@ -51,12 +56,24 @@ class XLMRoBERTaTrainer:
         self.weight_decay = weight_decay
         self.epochs = epochs
         self.patience = patience
+        self.label_smoothing = label_smoothing
+        self.dropout = dropout
+        self.max_grad_norm = max_grad_norm
+        self.warmup_ratio = warmup_ratio
         self.seed = seed
         
         self.tokenizer = AutoTokenizer.from_pretrained(config.XLM_MODEL_NAME)
+        
+        # Load model config and override dropout for stronger regularization
+        model_config = AutoConfig.from_pretrained(
+            config.XLM_MODEL_NAME,
+            num_labels=2,
+            hidden_dropout_prob=self.dropout,
+            attention_probs_dropout_prob=self.dropout,
+        )
         self.model = AutoModelForSequenceClassification.from_pretrained(
-            config.XLM_MODEL_NAME, 
-            num_labels=2
+            config.XLM_MODEL_NAME,
+            config=model_config,
         ).to(config.DEVICE)
         
         self.trainer = None
@@ -88,15 +105,22 @@ class XLMRoBERTaTrainer:
         
         training_args = TrainingArguments(
             output_dir=save_dir,
-            eval_strategy="epoch",
-            save_strategy="epoch",
+            eval_strategy="steps",
+            eval_steps=500,
+            save_strategy="steps",
+            save_steps=500,
             learning_rate=self.learning_rate,
             per_device_train_batch_size=self.batch_size,
             per_device_eval_batch_size=self.batch_size,
             num_train_epochs=self.epochs,
             weight_decay=self.weight_decay,
+            warmup_ratio=self.warmup_ratio,
+            max_grad_norm=self.max_grad_norm,
+            label_smoothing_factor=self.label_smoothing,
             load_best_model_at_end=True,
-            metric_for_best_model="macro_f1",
+            metric_for_best_model="eval_loss",
+            greater_is_better=False,
+            save_total_limit=3,
             seed=self.seed,
             report_to="none",  # disable wandb etc if not configured
             logging_dir=os.path.join(save_dir, "logs"),

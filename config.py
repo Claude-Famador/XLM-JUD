@@ -112,9 +112,12 @@ XLM_MAX_LENGTH = 128  # Max token length for SMS messages
 XLM_EPOCHS = 5
 XLM_BATCH_SIZE = 16
 XLM_LEARNING_RATE = 2e-5
-XLM_WEIGHT_DECAY = 0.01
+XLM_WEIGHT_DECAY = 0.05
 XLM_WARMUP_RATIO = 0.1
-XLM_EARLY_STOPPING_PATIENCE = 3  # Stop if val loss doesn't improve for 3 epochs
+XLM_EARLY_STOPPING_PATIENCE = 2  # Stop if val loss doesn't improve for 2 epochs
+XLM_LABEL_SMOOTHING = 0.1  # Prevents overconfident predictions / near-zero train loss
+XLM_DROPOUT = 0.2  # Hidden + attention dropout (base model default is 0.1)
+XLM_MAX_GRAD_NORM = 1.0  # Gradient clipping to limit large updates on noisy samples
 
 # Hyperparameter search ranges (Section 3.2.3)
 XLM_LR_RANGE = (1e-5, 5e-5)
