@@ -18,7 +18,6 @@ import sys
 import time
 import json
 
-# Ensure project root is on path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import config
 
@@ -29,7 +28,6 @@ def phase_data():
     print("  PHASE 1: DATA COLLECTION AND PREPROCESSING")
     print("=" * 70)
 
-    # Optionally download UCI and FLORES-200
     try:
         from data.download_datasets import download_uci_dataset, download_flores, download_extra_datasets, merge_datasets
         print("\nAttempting to download UCI, FLORES, and extra datasets...")
