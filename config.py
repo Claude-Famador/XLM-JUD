@@ -10,9 +10,6 @@ import torch
 import numpy as np
 import random
 
-# =============================================================================
-# Paths
-# =============================================================================
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "data")
 OUTPUT_DIR = os.path.join(BASE_DIR, "outputs")
@@ -24,15 +21,9 @@ FIGURE_DIR = os.path.join(OUTPUT_DIR, "figures")
 for d in [DATA_DIR, OUTPUT_DIR, MODEL_DIR, LOG_DIR, FIGURE_DIR]:
     os.makedirs(d, exist_ok=True)
 
-# =============================================================================
-# Random Seed — Fixed for Reproducibility (Section 3.2.4)
-# =============================================================================
+
 SEED = 42
 
-# =============================================================================
-# Data Configuration (Section 3.1)
-# =============================================================================
-# Dataset paths
 RAW_DATASET_PATH = os.path.join(DATA_DIR, "sample_dataset.csv")
 PROCESSED_DIR = os.path.join(DATA_DIR, "processed")
 os.makedirs(PROCESSED_DIR, exist_ok=True)
@@ -87,10 +78,6 @@ HTML_TAG_PATTERN = r"<[^>]+>"
 URL_PATTERN = r"https?://\S+|www\.\S+"
 METADATA_PATTERN = r"\[.*?\]"
 
-# =============================================================================
-# Augmentation Configuration (Section 3.1.2 & 3.2.2)
-# =============================================================================
-# Back-translation model (NLLB-200)
 BACKTRANSLATION_MODEL = "facebook/nllb-200-distilled-600M"
 BACKTRANSLATION_NUM_VARIANTS = 1  # Number of back-translated variants per sample
 
@@ -102,13 +89,9 @@ ENGLISH_CODE = "eng_Latn"
 SMOTE_SAMPLING_STRATEGY = "auto"  # Balance to ~1:1
 SMOTE_K_NEIGHBORS = 5
 
-# =============================================================================
-# XLM-RoBERTa Configuration (Section 3.2.1 & 3.2.2)
-# =============================================================================
-XLM_MODEL_NAME = "xlm-roberta-base"
+
 XLM_MAX_LENGTH = 128  # Max token length for SMS messages
 
-# Training hyperparameters (Section 3.2.3)
 XLM_EPOCHS = 5
 XLM_BATCH_SIZE = 16
 XLM_LEARNING_RATE = 2e-5
@@ -124,19 +107,13 @@ XLM_LR_RANGE = (1e-5, 5e-5)
 XLM_BATCH_SIZE_OPTIONS = [8, 16, 32]
 XLM_WEIGHT_DECAY_RANGE = (0.0, 0.1)
 
-# =============================================================================
-# Baseline Model Configuration (Section 3.2.2)
-# =============================================================================
-# TF-IDF settings
 TFIDF_MAX_FEATURES = 10000
 TFIDF_NGRAM_RANGE = (1, 3)  # Unigrams to trigrams
 TFIDF_SUBLINEAR_TF = True
 
-# SVM hyperparameter ranges
 SVM_C_RANGE = [0.01, 0.1, 1.0, 10.0, 100.0]
 SVM_KERNEL_OPTIONS = ["linear", "rbf"]
 
-# Logistic Regression hyperparameter ranges
 LR_C_RANGE = [0.01, 0.1, 1.0, 10.0, 100.0]
 LR_PENALTY_OPTIONS = ["l2"]
 

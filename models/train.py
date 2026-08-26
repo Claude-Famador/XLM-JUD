@@ -136,6 +136,7 @@ def train_xlm_roberta(
     test_df: pd.DataFrame,
     augmented_df: pd.DataFrame = None,
     tune_hyperparams: bool = False,
+    run_cv: bool = False,
 ) -> dict:
     """Train and evaluate XLM-RoBERTa model."""
     from models.xlm_roberta_model import XLMRoBERTaTrainer
@@ -177,10 +178,20 @@ def train_xlm_roberta(
     except:
         pass
         
-    all_results["XLM_original_cv"] = {
-        "model": "XLM_original_cv",
-        "fold_scores": [all_results["XLM_original"]["macro_f1"]] * config.K_FOLDS  # mock cv for now
-    }
+    if run_cv:
+        cv_pool_df = pd.concat([train_df, val_df], ignore_index=True)
+        cv_results = trainer_orig.cross_validate(cv_pool_df)
+        all_results["XLM_original_cv"] = {
+            "model": "XLM_original_cv",
+            "fold_scores": cv_results["fold_scores"],
+            "cv_macro_f1_mean": cv_results["cv_macro_f1_mean"],
+            "cv_macro_f1_std": cv_results["cv_macro_f1_std"]
+        }
+    else:
+        all_results["XLM_original_cv"] = {
+            "model": "XLM_original_cv",
+            "fold_scores": [all_results["XLM_original"]["macro_f1"]] * config.K_FOLDS  # mock cv for now
+        }
 
     if augmented_df is not None:
         del trainer_orig
@@ -208,10 +219,20 @@ def train_xlm_roberta(
         except:
             pass
             
-        all_results["XLM_augmented_cv"] = {
-            "model": "XLM_augmented_cv",
-            "fold_scores": [all_results["XLM_augmented"]["macro_f1"]] * config.K_FOLDS  # mock cv for now
-        }
+        if run_cv:
+            aug_cv_pool_df = pd.concat([augmented_df, val_df], ignore_index=True)
+            cv_results_aug = trainer_aug.cross_validate(aug_cv_pool_df)
+            all_results["XLM_augmented_cv"] = {
+                "model": "XLM_augmented_cv",
+                "fold_scores": cv_results_aug["fold_scores"],
+                "cv_macro_f1_mean": cv_results_aug["cv_macro_f1_mean"],
+                "cv_macro_f1_std": cv_results_aug["cv_macro_f1_std"]
+            }
+        else:
+            all_results["XLM_augmented_cv"] = {
+                "model": "XLM_augmented_cv",
+                "fold_scores": [all_results["XLM_augmented"]["macro_f1"]] * config.K_FOLDS  # mock cv for now
+            }
 
         del trainer_aug
         if torch.cuda.is_available():
@@ -230,7 +251,12 @@ def train_xlm_roberta(
     return all_results
 
 
-def run_full_training(use_back_translation: bool = True, use_smote: bool = True, tune_hyperparams: bool = False):
+def run_full_training(
+    use_back_translation: bool = True,
+    use_smote: bool = True,
+    tune_hyperparams: bool = False,
+    run_cv: bool = False,
+):
     """Execute the complete training pipeline."""
     config.set_seed()
     all_results = {}
@@ -243,7 +269,7 @@ def run_full_training(use_back_translation: bool = True, use_smote: bool = True,
     baseline_results = train_baselines(train_df, test_df, augmented_df, X_smote, y_smote, tune_hyperparams)
     all_results.update(baseline_results)
 
-    xlm_results = train_xlm_roberta(train_df, val_df, test_df, augmented_df, tune_hyperparams)
+    xlm_results = train_xlm_roberta(train_df, val_df, test_df, augmented_df, tune_hyperparams, run_cv)
     all_results.update(xlm_results)
 
     return all_results

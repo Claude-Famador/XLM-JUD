@@ -6,7 +6,6 @@ import torch
 from tqdm import tqdm
 from langdetect import detect
 
-# Add parent directory to path for config import
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
 

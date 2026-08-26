@@ -14,12 +14,7 @@ def apply_smote_tfidf(
     text_column: str = "text_clean",
     label_column: str = "label_encoded"
 ) -> tuple[np.ndarray, np.ndarray, TfidfVectorizer]:
-    """
-    Apply TF-IDF vectorization and SMOTE to the training data.
-    
-    Returns:
-        X_resampled, y_resampled, fitted_tfidf_vectorizer
-    """
+
     print(f"\nApplying SMOTE Augmentation")
     
     texts = train_df[text_column].fillna("").tolist()

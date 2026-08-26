@@ -71,6 +71,7 @@ def phase_train(
     use_back_translation: bool = False,
     use_smote: bool = True,
     tune_hyperparams: bool = False,
+    run_cv: bool = False,
 ):
     """Phase 3: Model Development (Section 3.2)."""
     print("\n" + "=" * 70)
@@ -83,6 +84,7 @@ def phase_train(
         use_back_translation=use_back_translation,
         use_smote=use_smote,
         tune_hyperparams=tune_hyperparams,
+        run_cv=run_cv,
     )
 
     return results
@@ -197,6 +199,7 @@ Examples:
   python main.py --phase train            # Training only
   python main.py --phase train --bt       # Training with back-translation
   python main.py --phase train --hpo      # Training with hyperparameter tuning
+  python main.py --phase train --cv       # Training with proper k-fold cross-validation
   python main.py --phase evaluate         # Evaluation only
         """,
     )
@@ -222,6 +225,11 @@ Examples:
         "--hpo",
         action="store_true",
         help="Enable hyperparameter optimization (slower but better results)",
+    )
+    parser.add_argument(
+        "--cv",
+        action="store_true",
+        help="Enable proper k-fold cross validation for XLM-RoBERTa (slow)",
     )
     parser.add_argument(
         "--seed",
@@ -259,6 +267,7 @@ Examples:
                 use_back_translation=args.bt,
                 use_smote=not args.no_smote,
                 tune_hyperparams=args.hpo,
+                run_cv=args.cv,
             )
 
         elif args.phase == "evaluate":
@@ -271,6 +280,7 @@ Examples:
                 use_back_translation=args.bt,
                 use_smote=not args.no_smote,
                 tune_hyperparams=args.hpo,
+                run_cv=args.cv,
             )
             phase_evaluate()
 

@@ -11,7 +11,6 @@ import sys
 import pandas as pd
 from datasets import load_dataset
 
-# Add parent directory to path for config import
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
 
@@ -30,10 +29,6 @@ def download_uci_dataset(output_dir: str = None) -> pd.DataFrame:
     try:
         dataset = load_dataset("sms_spam")
         df = pd.DataFrame(dataset["train"])
-
-        # Rename columns to match our expected format
-        # sms_spam dataset usually has 'sms' and 'label' (0=ham, 1=spam)
-        # Verify columns
         if 'sms' in df.columns and 'label' in df.columns:
             df = df.rename(columns={'sms': 'text'})
             # Map 0 -> ham, 1 -> smishing
