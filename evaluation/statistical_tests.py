@@ -13,8 +13,21 @@ import config
 
 
 def paired_t_test(scores_a, scores_b, name_a="Model A", name_b="Model B"):
-    """Paired t-test on k-fold results."""
+    """Paired t-test on k-fold results. Guards against degenerate (all-identical) scores."""
     scores_a, scores_b = np.array(scores_a), np.array(scores_b)
+    
+    # Guard: if all scores are identical (mock CV), the test is meaningless
+    if np.std(scores_a) == 0 and np.std(scores_b) == 0:
+        print(f"  WARNING: Skipping paired t-test ({name_a} vs {name_b}) — "
+              f"all fold scores are identical (likely mock CV). Run with --cv for valid results.")
+        return {
+            "test": "Paired t-test (SKIPPED — degenerate scores)",
+            "model_a": name_a, "model_b": name_b,
+            "mean_a": float(np.mean(scores_a)), "mean_b": float(np.mean(scores_b)),
+            "p_value": None, "significant": None,
+            "note": "All fold scores identical — run proper k-fold CV for valid statistical test"
+        }
+    
     t_stat, p_value = stats.ttest_rel(scores_a, scores_b)
     is_significant = p_value < config.SIGNIFICANCE_THRESHOLD
     

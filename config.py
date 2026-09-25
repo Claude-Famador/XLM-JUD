@@ -90,6 +90,7 @@ SMOTE_SAMPLING_STRATEGY = "auto"  # Balance to ~1:1
 SMOTE_K_NEIGHBORS = 5
 
 
+XLM_MODEL_NAME = "xlm-roberta-base"
 XLM_MAX_LENGTH = 128  # Max token length for SMS messages
 
 XLM_EPOCHS = 5

@@ -3,6 +3,13 @@ XLM-RoBERTa Model Configuration (Section 3.2.1).
 
 Implementation for fine-tuning XLM-RoBERTa on smishing datasets.
 Includes custom trainer class with early stopping and PyTorch/HuggingFace integration.
+
+Optimizations applied:
+  - FP16 mixed-precision training (~2x speedup on CUDA)
+  - Dynamic padding via DataCollatorWithPadding (saves compute on short SMS)
+  - Epoch-level evaluation instead of every 500 steps
+  - Reduced checkpoint footprint (save_total_limit=1)
+  - Multi-worker data loading
 """
 
 import os
@@ -16,7 +23,8 @@ from transformers import (
     AutoConfig,
     TrainingArguments,
     Trainer,
-    EarlyStoppingCallback
+    EarlyStoppingCallback,
+    DataCollatorWithPadding,
 )
 from datasets import Dataset
 
@@ -76,18 +84,23 @@ class XLMRoBERTaTrainer:
             config=model_config,
         ).to(config.DEVICE)
         
+        # Dynamic padding collator — pads to longest in batch, not max_length
+        self.data_collator = DataCollatorWithPadding(
+            tokenizer=self.tokenizer, padding="longest"
+        )
+        
         self.trainer = None
         
     def _prepare_dataset(self, df: pd.DataFrame, text_column="text_clean", label_column="label_encoded"):
-        """Convert DataFrame to HF Dataset and tokenize."""
+        """Convert DataFrame to HF Dataset and tokenize (NO padding here — collator handles it)."""
         dataset = Dataset.from_pandas(df[[text_column, label_column]])
         
         def tokenize_function(examples):
             return self.tokenizer(
                 examples[text_column],
-                padding="max_length",
                 truncation=True,
                 max_length=config.XLM_MAX_LENGTH,
+                # No padding here — DataCollatorWithPadding handles it per-batch
             )
             
         tokenized_dataset = dataset.map(tokenize_function, batched=True)
@@ -96,22 +109,25 @@ class XLMRoBERTaTrainer:
         return tokenized_dataset
         
     def train(self, train_df: pd.DataFrame, val_df: pd.DataFrame, save_dir: str):
-        """Train XLM-RoBERTa."""
+        """Train XLM-RoBERTa with optimized settings."""
         print(f"  Tokenizing datasets...")
         train_dataset = self._prepare_dataset(train_df)
         val_dataset = self._prepare_dataset(val_df)
         
         os.makedirs(save_dir, exist_ok=True)
+
+        # Use FP16 mixed precision on CUDA (BF16 disabled — causes CUBLAS crashes on some GPUs)
+        use_fp16 = torch.cuda.is_available()
+        use_bf16 = False
         
         training_args = TrainingArguments(
             output_dir=save_dir,
-            eval_strategy="steps",
-            eval_steps=500,
-            save_strategy="steps",
-            save_steps=500,
+            # Evaluate once per epoch (not every 500 steps)
+            eval_strategy="epoch",
+            save_strategy="epoch",
             learning_rate=self.learning_rate,
             per_device_train_batch_size=self.batch_size,
-            per_device_eval_batch_size=self.batch_size,
+            per_device_eval_batch_size=self.batch_size * 2,  # Eval can use larger batch
             num_train_epochs=self.epochs,
             weight_decay=self.weight_decay,
             warmup_ratio=self.warmup_ratio,
@@ -120,10 +136,17 @@ class XLMRoBERTaTrainer:
             load_best_model_at_end=True,
             metric_for_best_model="eval_loss",
             greater_is_better=False,
-            save_total_limit=3,
+            save_total_limit=1,  # Keep only best checkpoint (saves ~2.2GB per variant)
             seed=self.seed,
-            report_to="none",  # disable wandb etc if not configured
+            report_to="none",
             logging_dir=os.path.join(save_dir, "logs"),
+            logging_steps=100,
+            # Mixed precision — ~2x speedup (FP16 only, BF16 disabled)
+            fp16=use_fp16,
+            bf16=use_bf16,
+            # Parallel data loading
+            dataloader_num_workers=2,
+            dataloader_pin_memory=True,
         )
         
         self.trainer = Trainer(
@@ -132,10 +155,12 @@ class XLMRoBERTaTrainer:
             train_dataset=train_dataset,
             eval_dataset=val_dataset,
             compute_metrics=compute_metrics,
+            data_collator=self.data_collator,
             callbacks=[EarlyStoppingCallback(early_stopping_patience=self.patience)],
         )
         
         print(f"  Starting training for {self.epochs} epochs...")
+        print(f"  Mixed precision: fp16={use_fp16}")
         train_result = self.trainer.train()
         
         # Save best model
@@ -160,14 +185,25 @@ class XLMRoBERTaTrainer:
         """Load a saved model."""
         self.model = AutoModelForSequenceClassification.from_pretrained(model_path).to(config.DEVICE)
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
-        self.trainer = Trainer(model=self.model)
+        self.data_collator = DataCollatorWithPadding(
+            tokenizer=self.tokenizer, padding="longest"
+        )
+        self.trainer = Trainer(
+            model=self.model,
+            data_collator=self.data_collator,
+        )
         
     def predict(self, texts: list[str]) -> tuple[np.ndarray, np.ndarray]:
-        """Predict on raw texts."""
+        """Predict on raw texts with consistent tokenization."""
         dataset = Dataset.from_dict({"text": texts})
         
         def tokenize(examples):
-            return self.tokenizer(examples["text"], padding=True, truncation=True, max_length=config.XLM_MAX_LENGTH)
+            return self.tokenizer(
+                examples["text"],
+                truncation=True,
+                max_length=config.XLM_MAX_LENGTH,
+                # No padding — collator handles it
+            )
             
         tokenized = dataset.map(tokenize, batched=True)
         predictions = self.trainer.predict(tokenized)
@@ -216,6 +252,10 @@ class XLMRoBERTaTrainer:
 
         fold_scores = []
 
+        # Use FP16 mixed precision on CUDA (BF16 disabled — causes CUBLAS crashes on some GPUs)
+        use_fp16 = torch.cuda.is_available()
+        use_bf16 = False
+
         for fold_idx, (train_idx, val_idx) in enumerate(skf.split(data_df, labels), 1):
             print(f"\n  === CV Fold {fold_idx}/{k_folds} ===")
 
@@ -238,6 +278,9 @@ class XLMRoBERTaTrainer:
 
             # Tokenize fold data
             fold_tokenizer = AutoTokenizer.from_pretrained(config.XLM_MODEL_NAME)
+            fold_collator = DataCollatorWithPadding(
+                tokenizer=fold_tokenizer, padding="longest"
+            )
             
             train_dataset = Dataset.from_pandas(fold_train[["text_clean", "label_encoded"]])
             val_dataset = Dataset.from_pandas(fold_val[["text_clean", "label_encoded"]])
@@ -245,7 +288,6 @@ class XLMRoBERTaTrainer:
             def tokenize_fn(examples):
                 return fold_tokenizer(
                     examples["text_clean"],
-                    padding="max_length",
                     truncation=True,
                     max_length=config.XLM_MAX_LENGTH,
                 )
@@ -260,13 +302,11 @@ class XLMRoBERTaTrainer:
 
             training_args = TrainingArguments(
                 output_dir=fold_dir,
-                eval_strategy="steps",
-                eval_steps=500,
-                save_strategy="steps",
-                save_steps=500,
+                eval_strategy="epoch",
+                save_strategy="epoch",
                 learning_rate=self.learning_rate,
                 per_device_train_batch_size=self.batch_size,
-                per_device_eval_batch_size=self.batch_size,
+                per_device_eval_batch_size=self.batch_size * 2,
                 num_train_epochs=cv_epochs,
                 weight_decay=self.weight_decay,
                 warmup_ratio=self.warmup_ratio,
@@ -279,6 +319,10 @@ class XLMRoBERTaTrainer:
                 seed=self.seed,
                 report_to="none",
                 logging_dir=os.path.join(fold_dir, "logs"),
+                fp16=use_fp16,
+                bf16=use_bf16,
+                dataloader_num_workers=2,
+                dataloader_pin_memory=True,
             )
 
             fold_trainer = Trainer(
@@ -287,6 +331,7 @@ class XLMRoBERTaTrainer:
                 train_dataset=train_dataset,
                 eval_dataset=val_dataset,
                 compute_metrics=compute_metrics,
+                data_collator=fold_collator,
                 callbacks=[EarlyStoppingCallback(early_stopping_patience=cv_patience)],
             )
 
@@ -298,7 +343,7 @@ class XLMRoBERTaTrainer:
 
             pred_dataset = Dataset.from_dict({"text": val_texts})
             pred_dataset = pred_dataset.map(
-                lambda ex: fold_tokenizer(ex["text"], padding=True, truncation=True, max_length=config.XLM_MAX_LENGTH),
+                lambda ex: fold_tokenizer(ex["text"], truncation=True, max_length=config.XLM_MAX_LENGTH),
                 batched=True,
             )
             predictions = fold_trainer.predict(pred_dataset)
@@ -309,7 +354,7 @@ class XLMRoBERTaTrainer:
             print(f"  Fold {fold_idx} Macro-F1: {fold_f1:.4f}")
 
             # Cleanup GPU memory
-            del fold_model, fold_trainer, fold_tokenizer
+            del fold_model, fold_trainer, fold_tokenizer, fold_collator
             del train_dataset, val_dataset, pred_dataset
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()

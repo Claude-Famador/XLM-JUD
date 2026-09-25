@@ -26,19 +26,19 @@ def tune_svm(
     k_folds: int = None,
     seed: int = None,
 ) -> dict:
-    """Tune SVM hyperparameters using Optuna."""
+    """Tune SVM hyperparameters using Optuna (LinearSVC to match training)."""
     k_folds = k_folds or config.K_FOLDS
     seed = seed or config.SEED
 
     def objective(trial):
         C = trial.suggest_float("C", 0.01, 100.0, log=True)
-        kernel = trial.suggest_categorical("kernel", config.SVM_KERNEL_OPTIONS)
 
-        model = SVC(
+        from sklearn.svm import LinearSVC
+        model = LinearSVC(
             C=C,
-            kernel=kernel,
             random_state=seed,
             class_weight="balanced",
+            max_iter=2000,
         )
 
         skf = StratifiedKFold(n_splits=k_folds, shuffle=True, random_state=seed)
@@ -51,7 +51,8 @@ def tune_svm(
 
     study = optuna.create_study(direction="maximize", sampler=optuna.samplers.TPESampler(seed=seed))
     study.optimize(objective, n_trials=n_trials, show_progress_bar=True)
-    return study.best_params
+    # LinearSVC is always linear, so return C + kernel for compatibility
+    return {"C": study.best_params["C"], "kernel": "linear"}
 
 
 def tune_logistic_regression(

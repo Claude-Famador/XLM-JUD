@@ -6,8 +6,8 @@ Orchestrates the full training pipeline:
 2. Run data augmentation (back-translation + SMOTE)
 3. Train baseline models (SVM, LR) on original & augmented datasets
 4. Fine-tune XLM-RoBERTa on original & augmented datasets
-5. Perform 5-fold cross-validation
-6. Save model checkpoints and training logs
+5. Perform 5-fold cross-validation (when --cv is passed)
+6. Save model checkpoints, training logs, and predictions
 """
 
 import os
@@ -50,13 +50,17 @@ def run_augmentation(
 
     if use_back_translation:
         print("\n--- Phase 2a: Back-Translation Augmentation ---")
-        try:
-            from augmentation.back_translation import augment_with_back_translation
-            augmented_df = augment_with_back_translation(augmented_df)
-            bt_path = os.path.join(config.PROCESSED_DIR, "train_augmented_bt.csv")
-            augmented_df.to_csv(bt_path, index=False, encoding="utf-8")
-        except Exception as e:
-            print(f"Back-translation skipped (error: {e})")
+        bt_path = os.path.join(config.PROCESSED_DIR, "train_augmented_bt.csv")
+        if os.path.exists(bt_path):
+            print(f"  Loading existing back-translation data from {bt_path}")
+            augmented_df = pd.read_csv(bt_path, encoding="utf-8")
+        else:
+            try:
+                from augmentation.back_translation import augment_with_back_translation
+                augmented_df = augment_with_back_translation(augmented_df)
+                augmented_df.to_csv(bt_path, index=False, encoding="utf-8")
+            except Exception as e:
+                print(f"Back-translation skipped (error: {e})")
 
     if use_smote:
         print("\n--- Phase 2b: SMOTE Augmentation ---")
@@ -170,6 +174,7 @@ def train_xlm_roberta(
         "recall_macro": recall_score(test_labels, y_pred, average="macro"),
         "mcc": matthews_corrcoef(test_labels, y_pred),
         "predictions": y_pred.tolist(),
+        "probs": y_probs.tolist(),
         "history": history_orig,
     }
     
@@ -187,11 +192,7 @@ def train_xlm_roberta(
             "cv_macro_f1_mean": cv_results["cv_macro_f1_mean"],
             "cv_macro_f1_std": cv_results["cv_macro_f1_std"]
         }
-    else:
-        all_results["XLM_original_cv"] = {
-            "model": "XLM_original_cv",
-            "fold_scores": [all_results["XLM_original"]["macro_f1"]] * config.K_FOLDS  # mock cv for now
-        }
+    # No mock CV — if --cv is not passed, simply omit the cv entry
 
     if augmented_df is not None:
         del trainer_orig
@@ -211,6 +212,7 @@ def train_xlm_roberta(
             "recall_macro": recall_score(test_labels, y_pred_aug, average="macro"),
             "mcc": matthews_corrcoef(test_labels, y_pred_aug),
             "predictions": y_pred_aug.tolist(),
+            "probs": y_probs_aug.tolist(),
             "history": history_aug,
         }
         
@@ -228,25 +230,38 @@ def train_xlm_roberta(
                 "cv_macro_f1_mean": cv_results_aug["cv_macro_f1_mean"],
                 "cv_macro_f1_std": cv_results_aug["cv_macro_f1_std"]
             }
-        else:
-            all_results["XLM_augmented_cv"] = {
-                "model": "XLM_augmented_cv",
-                "fold_scores": [all_results["XLM_augmented"]["macro_f1"]] * config.K_FOLDS  # mock cv for now
-            }
+        # No mock CV
 
         del trainer_aug
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
 
+    # Save results JSON (metrics + history, without large arrays)
     results_path = os.path.join(config.LOG_DIR, "xlm_results.json")
     serializable = {}
     for k, v in all_results.items():
-        serializable[k] = {sk: sv for sk, sv in v.items() if sk not in ("predictions",)}
+        serializable[k] = {sk: sv for sk, sv in v.items() if sk not in ("predictions", "probs")}
         if "history" in serializable[k]:
             serializable[k]["history"] = {hk: [float(x) for x in hv] for hk, hv in serializable[k]["history"].items()}
 
     with open(results_path, "w") as f:
         json.dump(serializable, f, indent=2)
+
+    # Save predictions separately for evaluation phase (McNemar's, confusion matrices, etc.)
+    predictions_path = os.path.join(config.LOG_DIR, "xlm_predictions.json")
+    pred_data = {}
+    for k, v in all_results.items():
+        if "predictions" in v:
+            pred_data[k] = {
+                "model": v["model"],
+                "predictions": v["predictions"],
+            }
+            if "probs" in v:
+                pred_data[k]["probs"] = v["probs"]
+
+    with open(predictions_path, "w") as f:
+        json.dump(pred_data, f)
+    print(f"  Predictions saved to: {predictions_path}")
 
     return all_results
 

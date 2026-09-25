@@ -96,8 +96,8 @@ def phase_evaluate():
 
     import pandas as pd
     import numpy as np
-    from evaluation.evaluate import evaluate_model_comprehensive, compare_models
-    from evaluation.statistical_tests import run_all_statistical_tests, paired_t_test
+    from evaluation.evaluate import evaluate_model_comprehensive, compare_models, print_dialect_accuracy_table
+    from evaluation.statistical_tests import run_all_statistical_tests
     from evaluation.visualize import generate_all_visualizations
 
     # Load test data
@@ -110,46 +110,59 @@ def phase_evaluate():
 
     # Load saved results
     results_path = os.path.join(config.LOG_DIR, "xlm_results.json")
+    predictions_path = os.path.join(config.LOG_DIR, "xlm_predictions.json")
     baseline_path = os.path.join(config.LOG_DIR, "baseline_results.csv")
 
     all_results = {}
     evaluation_results = []
 
-    # Evaluate XLM-RoBERTa models
-    from models.xlm_roberta_model import XLMRoBERTaTrainer
-    import joblib
-
-    test_texts = test_df["text_clean"].fillna("").tolist()
-
+    # Load XLM results and predictions
     if os.path.exists(results_path):
         with open(results_path) as f:
             xlm_results = json.load(f)
 
+        # Load predictions from separate file
+        xlm_predictions = {}
+        if os.path.exists(predictions_path):
+            with open(predictions_path) as f:
+                xlm_predictions = json.load(f)
+
         for key, result in xlm_results.items():
             all_results[key] = result
-            if "predictions" in result:
-                y_pred = np.array(result["predictions"])
-                y_probs = np.array(result["probs"]) if "probs" in result else None
+
+            # Merge predictions back if available
+            if key in xlm_predictions:
+                pred_data = xlm_predictions[key]
+                y_pred = np.array(pred_data["predictions"])
+                y_probs = np.array(pred_data["probs"]) if "probs" in pred_data else None
+                all_results[key]["predictions"] = pred_data["predictions"]
+
                 eval_result = evaluate_model_comprehensive(
                     test_df, y_pred, y_probs=y_probs,
                     model_name=result.get("model", key),
                 )
                 evaluation_results.append(eval_result)
             elif key in ["XLM_original", "XLM_augmented"]:
+                # Fallback: reload model if predictions not found
+                from models.xlm_roberta_model import XLMRoBERTaTrainer
                 folder_name = "xlm_original" if key == "XLM_original" else "xlm_augmented"
                 ckpt_dir = os.path.join(config.MODEL_DIR, folder_name, "xlm_roberta_best")
                 if os.path.exists(ckpt_dir):
                     print(f"Loading {key} checkpoint from {ckpt_dir} for evaluation...")
                     trainer = XLMRoBERTaTrainer()
                     trainer.load_best_model(ckpt_dir)
+                    test_texts = test_df["text_clean"].fillna("").tolist()
                     preds, probs = trainer.predict(test_texts)
                     all_results[key]["predictions"] = preds.tolist()
-                    all_results[key]["probs"] = probs.tolist()
                     eval_result = evaluate_model_comprehensive(
                         test_df, preds, y_probs=probs,
                         model_name=result.get("model", key),
                     )
                     evaluation_results.append(eval_result)
+
+    # Evaluate baseline models
+    import joblib
+    test_texts = test_df["text_clean"].fillna("").tolist()
 
     for model_type in ["svm_original", "svm_smote", "lr_original", "lr_smote"]:
         model_path = os.path.join(config.MODEL_DIR, f"{model_type}.joblib")
@@ -159,7 +172,7 @@ def phase_evaluate():
             model = joblib.load(model_path)
             tfidf = joblib.load(tfidf_path)
 
-            X_test = tfidf.transform(test_df["text_clean"].fillna("").tolist())
+            X_test = tfidf.transform(test_texts)
             y_pred = model.predict(X_test)
 
             eval_result = evaluate_model_comprehensive(
@@ -171,6 +184,8 @@ def phase_evaluate():
     # Model comparison
     if evaluation_results:
         compare_models(evaluation_results)
+        # Per-dialect accuracy table
+        print_dialect_accuracy_table(evaluation_results, test_df)
 
     # Statistical tests
     run_all_statistical_tests(all_results)

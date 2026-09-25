@@ -7,16 +7,17 @@ import sys
 import json
 import numpy as np
 import pandas as pd
-from sklearn.metrics import f1_score, precision_score, recall_score, matthews_corrcoef, roc_auc_score, confusion_matrix, classification_report
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, matthews_corrcoef, roc_auc_score, confusion_matrix, classification_report
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
 
 
 def compute_metrics(y_true, y_pred, y_probs=None, model_name="model"):
-    """Compute primary and additional metrics."""
+    """Compute primary and additional metrics including accuracy."""
     metrics = {
         "model": model_name,
+        "accuracy": float(accuracy_score(y_true, y_pred)),
         "macro_f1": float(f1_score(y_true, y_pred, average="macro")),
         "precision_macro": float(precision_score(y_true, y_pred, average="macro", zero_division=0)),
         "recall_macro": float(recall_score(y_true, y_pred, average="macro", zero_division=0)),
@@ -58,6 +59,7 @@ def evaluate_dialect_awareness(test_df, y_pred, y_probs=None, model_name="model"
             dialect_results[lang] = {
                 "model": f"{model_name}_{lang}",
                 "n_samples": int(lang_mask.sum()),
+                "accuracy": float(accuracy_score(lang_y_true, lang_y_pred)),
                 "macro_f1": float(f1_score(lang_y_true, lang_y_pred, average="macro", zero_division=0)),
             }
         else:
@@ -108,4 +110,73 @@ def compare_models(results_list, output_dir=None):
 
     df = pd.DataFrame(rows).sort_values("Macro-F1", ascending=False)
     df.to_csv(os.path.join(output_dir, "model_comparison.csv"), index=False)
+    return df
+
+
+def print_dialect_accuracy_table(results_list, test_df, output_dir=None):
+    """
+    Print and save a per-dialect accuracy table for all models.
+    Uses the language column in test_df to stratify results.
+    """
+    output_dir = output_dir or config.LOG_DIR
+
+    # Friendly names for display
+    lang_display = {
+        "english": "English",
+        "extra_spam_messages": "English (Extra SMS)",
+        "extra_phishing_sms": "English (Phishing)",
+        "ceb_Latn": "Cebuano",
+        "ilo_Latn": "Ilocano",
+        "tgl_Latn": "Tagalog",
+    }
+
+    rows = []
+    for result in results_list:
+        model_name = result.get("model", "unknown")
+        dialect_results = result.get("dialect_results", {})
+
+        for lang, metrics in dialect_results.items():
+            if lang == "overall":
+                display_name = "Overall"
+            else:
+                display_name = lang_display.get(lang, lang)
+
+            rows.append({
+                "Model": model_name,
+                "Language": display_name,
+                "N_Samples": metrics.get("n_samples", "-"),
+                "Accuracy": metrics.get("accuracy"),
+                "Macro-F1": metrics.get("macro_f1"),
+                "Precision": metrics.get("precision_macro"),
+                "Recall": metrics.get("recall_macro"),
+            })
+
+    if not rows:
+        print("  No dialect results available.")
+        return pd.DataFrame()
+
+    df = pd.DataFrame(rows)
+
+    # Print formatted table
+    print("\n" + "=" * 90)
+    print("  PER-DIALECT ACCURACY TABLE")
+    print("=" * 90)
+    for model_name in df["Model"].unique():
+        model_df = df[df["Model"] == model_name].copy()
+        print(f"\n  {model_name}:")
+        print(f"  {'Language':<25} {'N':>6} {'Accuracy':>10} {'Macro-F1':>10} {'Precision':>10} {'Recall':>10}")
+        print(f"  {'-'*25} {'-'*6} {'-'*10} {'-'*10} {'-'*10} {'-'*10}")
+        for _, row in model_df.iterrows():
+            acc = f"{row['Accuracy']:.4f}" if row['Accuracy'] is not None else "N/A"
+            f1 = f"{row['Macro-F1']:.4f}" if row['Macro-F1'] is not None else "N/A"
+            prec = f"{row['Precision']:.4f}" if row['Precision'] is not None else "N/A"
+            rec = f"{row['Recall']:.4f}" if row['Recall'] is not None else "N/A"
+            print(f"  {row['Language']:<25} {str(row['N_Samples']):>6} {acc:>10} {f1:>10} {prec:>10} {rec:>10}")
+    print("=" * 90)
+
+    # Save to CSV
+    csv_path = os.path.join(output_dir, "dialect_accuracy.csv")
+    df.to_csv(csv_path, index=False)
+    print(f"  Saved to: {csv_path}")
+
     return df
