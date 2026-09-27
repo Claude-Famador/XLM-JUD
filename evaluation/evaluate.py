@@ -101,6 +101,7 @@ def compare_models(results_list, output_dir=None):
         overall = result.get("overall", {})
         rows.append({
             "Model": result.get("model", "unknown"),
+            "Accuracy": overall.get("accuracy"),
             "Macro-F1": overall.get("macro_f1"),
             "Precision": overall.get("precision_macro"),
             "Recall": overall.get("recall_macro"),

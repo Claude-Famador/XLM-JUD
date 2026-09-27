@@ -175,8 +175,18 @@ def phase_evaluate():
             X_test = tfidf.transform(test_texts)
             y_pred = model.predict(X_test)
 
+            # Compute probability scores for AUC-ROC
+            y_probs = None
+            if hasattr(model, "predict_proba"):
+                y_probs = model.predict_proba(X_test)
+            elif hasattr(model, "decision_function"):
+                scores = model.decision_function(X_test)
+                # Wrap as 2-column array so compute_metrics handles it uniformly
+                import numpy as np
+                y_probs = np.column_stack([-scores, scores])
+
             eval_result = evaluate_model_comprehensive(
-                test_df, y_pred,
+                test_df, y_pred, y_probs=y_probs,
                 model_name=model_type.upper(),
             )
             evaluation_results.append(eval_result)
