@@ -7,5 +7,18 @@
     "mean_b": 0.9738980583212662,
     "p_value": 0.0,
     "significant": true
+  },
+  {
+    "test": "McNemar's test (continuity-corrected)",
+    "model_a": "XLM-RoBERTa (Original)",
+    "model_b": "SVM (Original)",
+    "b_a_correct_b_wrong": 394,
+    "c_a_wrong_b_correct": 89,
+    "n_discordant": 483,
+    "chi2_statistic": 191.337474,
+    "p_value": 0.0,
+    "significant": true,
+    "alpha": 0.05,
+    "interpretation": "XLM-RoBERTa (Original) and SVM (Original) make significantly different errors (p=0.0000 < 0.05)"
   }
 ]
