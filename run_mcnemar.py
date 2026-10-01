@@ -96,106 +96,144 @@ def load_xlm_predictions():
     return np.array(y_true), np.array(y_pred_xlm), test_df
 
 
-def load_svm_predictions(y_true):
+def load_baseline_predictions(model_name, y_true):
     """
-    Load or reconstruct SVM predictions.
-    Tries saved model first; falls back to re-predicting from test CSV.
+    Load predictions for a baseline model (SVM or LR, original or SMOTE).
+    Tries saved model first; falls back to confusion matrix reconstruction.
     """
-    # --- Try loading saved SVM model + test data ---
-    svm_path = os.path.join(MODEL_DIR, "SVM_ORIGINAL.joblib")
+    model_path = os.path.join(MODEL_DIR, f"{model_name}.joblib")
     tfidf_path = os.path.join(MODEL_DIR, "tfidf_vectorizer.joblib")
     test_csv   = os.path.join(PROCESSED_DIR, "test.csv")
 
-    if os.path.exists(svm_path) and os.path.exists(tfidf_path) and os.path.exists(test_csv):
-        print("  Loading saved SVM model and TF-IDF vectorizer...")
-        svm_model  = joblib.load(svm_path)
+    if os.path.exists(model_path) and os.path.exists(tfidf_path) and os.path.exists(test_csv):
+        print(f"  Loading saved {model_name} model and TF-IDF vectorizer...")
+        model      = joblib.load(model_path)
         vectorizer = joblib.load(tfidf_path)
         test_df    = pd.read_csv(test_csv)
 
         text_col = "text_clean" if "text_clean" in test_df.columns else "text"
         X_test   = vectorizer.transform(test_df[text_col].fillna("").tolist())
-        y_pred_svm = svm_model.predict(X_test)
-        print(f"  SVM predictions obtained from saved model: {len(y_pred_svm)} samples")
-        return np.array(y_pred_svm)
+        y_pred   = model.predict(X_test)
+        print(f"  {model_name} predictions obtained: {len(y_pred)} samples")
+        return np.array(y_pred)
 
-    # --- Fallback: reconstruct from eval JSON confusion matrix ---
-    print("  WARNING: SVM model or test CSV not found.")
-    print("  Reconstructing SVM predictions from confusion matrix (approximate)...")
-    eval_path = os.path.join(LOG_DIR, "eval_SVM_ORIGINAL.json")
+    # Fallback: reconstruct from eval JSON confusion matrix
+    eval_name = model_name.upper().replace("_", "_")
+    eval_path = os.path.join(LOG_DIR, f"eval_{eval_name}.json")
     if not os.path.exists(eval_path):
-        raise FileNotFoundError(f"Neither SVM model nor eval JSON found. Cannot run McNemar's test.")
+        print(f"  WARNING: Neither {model_name} model nor eval JSON found. Skipping.")
+        return None
 
+    print(f"  Reconstructing {model_name} predictions from confusion matrix (approximate)...")
     with open(eval_path, "r") as f:
         eval_data = json.load(f)
 
     cm = eval_data["overall"]["confusion_matrix"]
     tn, fp, fn, tp = cm[0][0], cm[0][1], cm[1][0], cm[1][1]
 
-    # Reconstruct predictions to match the confusion matrix exactly.
-    # We align them with y_true ordering: place TN/FP in ham positions, TP/FN in smishing positions.
     ham_idx      = np.where(y_true == 0)[0]
     smishing_idx = np.where(y_true == 1)[0]
 
-    y_pred_svm = np.zeros(len(y_true), dtype=int)
+    y_pred = np.zeros(len(y_true), dtype=int)
+    y_pred[ham_idx[:tn]]           = 0
+    y_pred[ham_idx[tn:tn+fp]]      = 1
+    y_pred[smishing_idx[:tp]]      = 1
+    y_pred[smishing_idx[tp:tp+fn]] = 0
 
-    # Ham positions: TN correctly predicted as 0, FP wrongly predicted as 1
-    y_pred_svm[ham_idx[:tn]]           = 0  # True Negatives
-    y_pred_svm[ham_idx[tn:tn+fp]]      = 1  # False Positives
-
-    # Smishing positions: TP correctly predicted as 1, FN wrongly predicted as 0
-    y_pred_svm[smishing_idx[:tp]]      = 1  # True Positives
-    y_pred_svm[smishing_idx[tp:tp+fn]] = 0  # False Negatives
-
-    print(f"  Reconstructed SVM predictions: {len(y_pred_svm)} samples")
+    print(f"  Reconstructed {model_name} predictions: {len(y_pred)} samples")
     print(f"  (TN={tn}, FP={fp}, FN={fn}, TP={tp})")
-    return y_pred_svm
+    return y_pred
 
 
 def main():
     print("=" * 60)
-    print("  McNemar's Test: XLM-RoBERTa vs SVM")
+    print("  McNemar's Test: All Pairwise Model Comparisons")
     print("=" * 60)
 
-    # Load data
-    y_true, y_pred_xlm, test_df = load_xlm_predictions()
-    y_pred_svm = load_svm_predictions(y_true)
+    # Load ground truth and XLM predictions
+    y_true, y_pred_xlm_orig, test_df = load_xlm_predictions()
 
-    assert len(y_true) == len(y_pred_xlm) == len(y_pred_svm), (
-        f"Length mismatch: y_true={len(y_true)}, XLM={len(y_pred_xlm)}, SVM={len(y_pred_svm)}"
-    )
+    # Load XLM augmented predictions
+    pred_path = os.path.join(LOG_DIR, "xlm_predictions.json")
+    with open(pred_path, "r") as f:
+        xlm_data = json.load(f)
 
-    # Run McNemar's test
-    result = mcnemar_test(y_true, y_pred_xlm, y_pred_svm,
-                          name_a="XLM-RoBERTa (Original)",
-                          name_b="SVM (Original)")
+    y_pred_xlm_aug = None
+    xlm_aug = xlm_data.get("XLM_augmented", {})
+    if "predictions" in xlm_aug:
+        y_pred_xlm_aug = np.array(xlm_aug["predictions"])
+        print(f"  Loaded XLM_augmented predictions: {len(y_pred_xlm_aug)} samples")
 
-    # Print results
+    # Load all baseline predictions
+    y_pred_svm_orig = load_baseline_predictions("svm_original", y_true)
+    y_pred_svm_smote = load_baseline_predictions("svm_smote", y_true)
+    y_pred_lr_orig = load_baseline_predictions("lr_original", y_true)
+    y_pred_lr_smote = load_baseline_predictions("lr_smote", y_true)
+
+    # Build list of available models
+    all_models = [
+        ("XLM-RoBERTa (Original)", y_pred_xlm_orig),
+        ("XLM-RoBERTa (Augmented)", y_pred_xlm_aug),
+        ("SVM (Original)", y_pred_svm_orig),
+        ("SVM (SMOTE)", y_pred_svm_smote),
+        ("LR (Original)", y_pred_lr_orig),
+        ("LR (SMOTE)", y_pred_lr_smote),
+    ]
+
+    # Filter to models that have valid predictions
+    available = [(name, preds) for name, preds in all_models
+                 if preds is not None and len(preds) == len(y_true)]
+
+    print(f"\n  Available models for comparison: {len(available)}")
+    for name, preds in available:
+        print(f"    - {name} ({len(preds)} predictions)")
+
+    # Run McNemar's test for every unique pair
+    mcnemar_results = []
+    for i in range(len(available)):
+        for j in range(i + 1, len(available)):
+            name_a, preds_a = available[i]
+            name_b, preds_b = available[j]
+
+            result = mcnemar_test(y_true, preds_a, preds_b,
+                                  name_a=name_a, name_b=name_b)
+            mcnemar_results.append(result)
+
+            # Print individual result
+            print(f"\n  {name_a} vs {name_b}:")
+            print(f"    Chi2 = {result['chi2_statistic']}, p = {result['p_value']}, "
+                  f"significant = {result['significant']}")
+
+    # Print summary
     print(f"\n{'='*60}")
-    print(f"  RESULTS")
+    print(f"  SUMMARY: {len(mcnemar_results)} McNemar's Tests")
     print(f"{'='*60}")
-    print(f"  Chi-squared statistic : {result['chi2_statistic']}")
-    print(f"  p-value               : {result['p_value']}")
-    print(f"  Significant (alpha=0.05) : {result['significant']}")
-    print(f"\n  Interpretation:")
-    print(f"  {result['interpretation']}")
+    sig_count = sum(1 for r in mcnemar_results if r["significant"])
+    print(f"  Significant: {sig_count}/{len(mcnemar_results)} (alpha={SIGNIFICANCE_THRESHOLD})")
+
+    for r in mcnemar_results:
+        marker = "***" if r["significant"] else "   "
+        print(f"  {marker} {r['model_a']} vs {r['model_b']}: "
+              f"p={r['p_value']:.6f}")
     print(f"{'='*60}\n")
 
-    # Append result to statistical_tests.json
+    # Save results — merge with existing statistical_tests.json
     stat_path = os.path.join(LOG_DIR, "statistical_tests.json")
     existing = []
     if os.path.exists(stat_path):
         with open(stat_path, "r") as f:
             existing = json.load(f)
 
-    # Remove any prior McNemar entry
+    # Remove any prior McNemar entries
     existing = [e for e in existing if e.get("test") != "McNemar's test (continuity-corrected)"]
-    existing.append(result)
+    existing.extend(mcnemar_results)
 
     with open(stat_path, "w") as f:
         json.dump(existing, f, indent=2)
 
-    print(f"  Results appended to: {stat_path}")
+    print(f"  Results saved to: {stat_path}")
 
 
 if __name__ == "__main__":
     main()
+

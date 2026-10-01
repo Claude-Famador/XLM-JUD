@@ -271,13 +271,24 @@ def run_full_training(
     use_smote: bool = True,
     tune_hyperparams: bool = False,
     run_cv: bool = False,
+    quick_mode: bool = False,
 ):
-    """Execute the complete training pipeline."""
+    """Execute the complete training pipeline.
+    
+    Args:
+        quick_mode: If True, uses the test set as training data for a fast dry run.
+                    Results won't be scientifically valid but useful for testing the pipeline.
+    """
     config.set_seed()
     all_results = {}
 
     train_df, val_df, test_df = load_data()
     all_results["test_labels"] = test_df["label_encoded"].values.tolist()
+
+    if quick_mode:
+        print("\n  *** QUICK MODE: Using test set as training data (dry run) ***")
+        print(f"  Training samples: {len(test_df)} (instead of {len(train_df)})\n")
+        train_df = test_df.copy()
 
     augmented_df, X_smote, y_smote = run_augmentation(train_df, use_back_translation, use_smote)
     

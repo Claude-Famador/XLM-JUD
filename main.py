@@ -70,6 +70,7 @@ def phase_train(
     use_smote: bool = True,
     tune_hyperparams: bool = False,
     run_cv: bool = False,
+    quick_mode: bool = False,
 ):
     """Phase 3: Model Development (Section 3.2)."""
     print("\n" + "=" * 70)
@@ -83,6 +84,7 @@ def phase_train(
         use_smote=use_smote,
         tune_hyperparams=tune_hyperparams,
         run_cv=run_cv,
+        quick_mode=quick_mode,
     )
 
     return results
@@ -191,11 +193,28 @@ def phase_evaluate():
             )
             evaluation_results.append(eval_result)
 
+            # Store predictions for McNemar's test
+            # Map model_type to the key format used by statistical_tests
+            key_map = {
+                "svm_original": "SVM_original",
+                "svm_smote": "SVM_smote",
+                "lr_original": "LR_original",
+                "lr_smote": "LR_smote",
+            }
+            result_key = key_map.get(model_type, model_type)
+            if result_key not in all_results:
+                all_results[result_key] = {}
+            all_results[result_key]["predictions"] = y_pred.tolist()
+
     # Model comparison
     if evaluation_results:
         compare_models(evaluation_results)
         # Per-dialect accuracy table
         print_dialect_accuracy_table(evaluation_results, test_df)
+
+    # Store ground truth labels for McNemar's test
+    label_col = "label_encoded" if "label_encoded" in test_df.columns else "label"
+    all_results["test_labels"] = test_df[label_col].tolist()
 
     # Statistical tests
     run_all_statistical_tests(all_results)
@@ -260,6 +279,11 @@ Examples:
         default=42,
         help="Random seed for reproducibility (default: 42)",
     )
+    parser.add_argument(
+        "--quick",
+        action="store_true",
+        help="Quick dry run: train on test set instead of full train set (~30 min vs ~2 hrs)",
+    )
 
     args = parser.parse_args()
 
@@ -291,6 +315,7 @@ Examples:
                 use_smote=not args.no_smote,
                 tune_hyperparams=args.hpo,
                 run_cv=args.cv,
+                quick_mode=args.quick,
             )
 
         elif args.phase == "evaluate":
@@ -304,6 +329,7 @@ Examples:
                 use_smote=not args.no_smote,
                 tune_hyperparams=args.hpo,
                 run_cv=args.cv,
+                quick_mode=args.quick,
             )
             phase_evaluate()
 

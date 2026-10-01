@@ -58,34 +58,51 @@ def mcnemar_test(y_true, y_pred_a, y_pred_b, name_a="Model A", name_b="Model B")
 
 
 def run_all_statistical_tests(results, output_dir=None):
-    """Run all statistical tests."""
+    """Run all statistical tests across all model pairs."""
     output_dir = output_dir or config.LOG_DIR
     all_tests = []
 
-    if "XLM_original_cv" in results and "XLM_augmented_cv" in results:
-        all_tests.append(paired_t_test(
-            results["XLM_original_cv"]["fold_scores"],
-            results["XLM_augmented_cv"]["fold_scores"],
-            "XLM-R (Original)", "XLM-R (Augmented)"
-        ))
+    # --- Paired t-tests on k-fold CV scores (same family, different strategy) ---
+    t_test_pairs = [
+        ("XLM_original_cv", "XLM_augmented_cv", "XLM-R (Original)", "XLM-R (Augmented)"),
+        ("SVM_original_cv", "SVM_smote_cv", "SVM (Original)", "SVM (SMOTE)"),
+        ("LR_original_cv", "LR_smote_cv", "LR (Original)", "LR (SMOTE)"),
+    ]
+    for key_a, key_b, name_a, name_b in t_test_pairs:
+        if key_a in results and key_b in results:
+            all_tests.append(paired_t_test(
+                results[key_a]["fold_scores"],
+                results[key_b]["fold_scores"],
+                name_a, name_b
+            ))
 
-    if "SVM_original_cv" in results and "SVM_smote_cv" in results:
-        all_tests.append(paired_t_test(
-            results["SVM_original_cv"]["fold_scores"],
-            results["SVM_smote_cv"]["fold_scores"],
-            "SVM (Original)", "SVM (SMOTE)"
-        ))
-
+    # --- McNemar's tests on per-sample predictions (all pairwise comparisons) ---
     test_labels = results.get("test_labels")
     if test_labels:
         y_true = np.array(test_labels)
-        if "XLM_original" in results and "SVM_original" in results:
-            all_tests.append(mcnemar_test(
-                y_true, 
-                np.array(results["XLM_original"].get("predictions", [])), 
-                np.array(results["SVM_original"].get("predictions", [])),
-                "XLM-RoBERTa", "SVM"
-            ))
+
+        # Collect all models that have predictions
+        model_keys = [
+            ("XLM_original", "XLM-RoBERTa (Original)"),
+            ("XLM_augmented", "XLM-RoBERTa (Augmented)"),
+            ("SVM_original", "SVM (Original)"),
+            ("SVM_smote", "SVM (SMOTE)"),
+            ("LR_original", "LR (Original)"),
+            ("LR_smote", "LR (SMOTE)"),
+        ]
+
+        available = []
+        for key, name in model_keys:
+            preds = results.get(key, {}).get("predictions", [])
+            if len(preds) == len(y_true):
+                available.append((key, name, np.array(preds)))
+
+        # Run McNemar's for every unique pair
+        for i in range(len(available)):
+            for j in range(i + 1, len(available)):
+                _, name_a, preds_a = available[i]
+                _, name_b, preds_b = available[j]
+                all_tests.append(mcnemar_test(y_true, preds_a, preds_b, name_a, name_b))
 
     if all_tests:
         with open(os.path.join(output_dir, "statistical_tests.json"), "w") as f:
